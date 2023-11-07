@@ -10,18 +10,18 @@ app.use(cors());
 app.use(express.json());
 
 const balances = {
-  "0x9f19e8f23cce1cc6577e635aeeff10b6e78e5a34": 100,
-  "0x4d358b9d4ef14204e25296d3d60417a9aec9e4da": 50,
-  "0x44a4bead3965d3b7fed3d81a25426cfb99cdbe13": 75,
+  "0x5388f0706ed5cad71f2a3680b1a3f501c962225a": 100,
+  "0x2582fdc08e8d865d2600ad905df12d1b53ab74d9": 50,
+  "0x3221526539db23c99422f8bf50e35c75517893f9": 75,
 };
 
 const privateKeys = {
-  "0x9f19e8f23cce1cc6577e635aeeff10b6e78e5a34":
-    "8f53c50aebc0ee9240bb1044b7867b14ed494545b845a6a5ec4a4310938815bd",
-  "0x4d358b9d4ef14204e25296d3d60417a9aec9e4da":
-    "1027f8a3440852c25948408d94238905a5ccf0b938a91c8c5ea904953a08ae9f",
-  "0x44a4bead3965d3b7fed3d81a25426cfb99cdbe13":
-    "2ca12390ba8c3e5204f28ce04dbfa3d56e7d5253d1265a03565d629fbb9eb722",
+  "0x5388f0706ed5cad71f2a3680b1a3f501c962225a":
+    "97e79ce0ef05defbeeee3c59c2298bec144c9559d444873a79d19a5f862aaa16",
+  "0x2582fdc08e8d865d2600ad905df12d1b53ab74d9":
+    "1a116570141aef0ff07f81eb412fc1244d3cdd62508c99d0d1ee4662ac4725cc",
+  "0x3221526539db23c99422f8bf50e35c75517893f9":
+    "9ccc5e65a51770f77f83627b6f8976a1a51dd2ee88fea9833b72bbdd3d44c72f",
 };
 
 app.get("/balance/:address", (req, res) => {
@@ -31,28 +31,35 @@ app.get("/balance/:address", (req, res) => {
   res.send({ balance, privateKey });
 });
 
-app.post("/send", (req, res) => {
+app.post("/send", async (req, res) => {
   try {
-    const { signature, hexMessage, recoveryBit, sender, recipient, amount } = req.body;
+    const { signature, hexMessage, recoveryBit, sender, recipient, amount } =
+      req.body;
 
-    const signaturePublicKey = secp.recoverPublicKey(hexMessage,signature,recoveryBit);
+    const signaturePublicKey = secp.recoverPublicKey(
+      hexMessage,
+      signature,
+      recoveryBit
+    );
     const signatureAddress = keccak256(signaturePublicKey.slice(1)).slice(-20);
-    const signatureAddressHex ="0x" + toHex(signatureAddress);
+    const signatureAddressHex = "0x" + toHex(signatureAddress);
 
-  setInitialBalance(sender);
-  setInitialBalance(recipient);
+    setInitialBalance(sender);
+    setInitialBalance(recipient);
 
-  if (balances[sender] < amount) {
-    res.status(400).send({ message: "Not enough funds!" });
-  } else if (signatureAddressHex !== sender) {
-    res.status(400).send({message: "You are not the sender"});
-  } else {
-    balances[sender] -= amount;
-    balances[recipient] += amount;
-    res.send({ balance: balances[sender] });
-  }
-  }
-  catch (error) {
+    if (balances[sender] < amount) {
+      res.status(400).send({ message: "Not enough funds!" });
+    } else if (signatureAddressHex !== sender) {
+      res.status(400).send({ message: "You are not the sender" });
+      console.log(sender);
+      console.log(recipient);
+      console.log(signatureAddressHex);
+    } else {
+      balances[sender] -= amount;
+      balances[recipient] += amount;
+      res.send({ balance: balances[sender] });
+    }
+  } catch (error) {
     console.log(error);
   }
 });

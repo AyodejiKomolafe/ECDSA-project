@@ -1,10 +1,12 @@
 import { useState } from "react";
 import server from "./server";
 
-import * as secp from "ethereum-cryptography/secp256k1";
 import { utf8ToBytes } from "ethereum-cryptography/utils";
 import { keccak256 } from "ethereum-cryptography/keccak";
 import {toHex} from "ethereum-cryptography/utils";
+import {secp256k1} from "ethereum-cryptography/secp256k1";
+import secp from "ethereum-cryptography/secp256k1"
+import {sign} from "ethereum-cryptography/secp256k1";
 
 function Transfer({ address, setBalance, privateKey }) {
   const [sendAmount, setSendAmount] = useState("");
@@ -25,8 +27,7 @@ function Transfer({ address, setBalance, privateKey }) {
       const hashedMessage = keccak256(utf8ToBytes(JSON.stringify(transactionMessage)));
       const hexMessage = toHex(hashedMessage);
       setHashedMessage(hexMessage);
-
-      const signatureArray = secp.sign(hexMessage, privateKey, { recovered: true });
+      const signatureArray = await sign(hexMessage, privateKey, {recovered: true });
       const signature = toHex(signatureArray[0]);
       setSignature(signature);
       const recoveryBit = signatureArray[1];
@@ -82,7 +83,7 @@ function Transfer({ address, setBalance, privateKey }) {
       <input type="button" className="button" value= "Sign the transaction" onClick={hashAndSign}></input>
 
       <div>Transaction hash: {hexMessage}</div>
-      <div>Signature: {signature.slice(0.4)}...{signature.slice(-4)}</div>
+      <div>Signature: {signature.slice(0,4)}...{signature.slice(-4)}</div>
       <div>Recovery Bit: {recoveryBit}</div>
 
       <input type="submit" className="button" value="Transfer" />
